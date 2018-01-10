@@ -169,6 +169,7 @@ int main(int argc, char **argv)
 	}
 	if ((file2 = fopen(fname2, "r")) == 0) {
 		fprintf(stderr, "Error opening %s for reading.\n", fname2);
+		fclose(file1);
 		exit(EXIT_FAILURE);
 	}
 
