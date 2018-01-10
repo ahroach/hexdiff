@@ -107,7 +107,7 @@ void print_diff(char * buf1, char * buf2, unsigned long long int skip1,
 
 int main(int argc, char **argv)
 {
-	int opt, show_all, final, eq;
+	int opt, show_all, final;
 	unsigned long long int max_len, skip1, skip2, cnt, eq_run;
 	char *fname1, *fname2;
 	FILE *file1, *file2;
@@ -211,8 +211,7 @@ int main(int argc, char **argv)
 			final = 1;
 		}
 		
-		eq = (memcmp(buf1, buf2, 8) == 0) ? 1 : 0;
-		if (eq == 1) {
+		if (memcmp(buf1, buf2, 8) == 0) {
 			if ((eq_run == 0) || (show_all == 1)) {
 				print_same(buf1, buf2, skip1, skip2, cnt);	
 			} else if (eq_run == 1) {
