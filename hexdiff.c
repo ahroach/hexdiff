@@ -114,6 +114,10 @@ int main(int argc, char **argv)
 
 	unsigned char buf1[8], buf2[8];
 
+	// TODO: Trap SIGINT so that we always clean up with a 
+	// reset character, and don't leave the terminal in red
+	// or green mode
+
 	// Parse the input arguments
 	show_all = 0;
 	max_len = 0;
