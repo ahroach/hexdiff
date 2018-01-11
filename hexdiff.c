@@ -25,6 +25,12 @@
 #include <string.h>
 
 
+// ANSI escape sequences
+char * ansi_green = "\x1B""[32m";
+char * ansi_red = "\x1B""[31m";
+char * ansi_reset = "\x1B""[0m";
+
+
 void printicize(char * buf) {
 	// Convert non-ASCII printable values to '.'
 	for (int i = 0; i < 8; i++) {
@@ -40,9 +46,9 @@ void print_same(char * buf1, char * buf2, unsigned long long int skip1,
                 unsigned long long int skip2, unsigned long long int cnt)
 {
 	// Print the left side
-	printf("0x%010llx  %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx ",
-	       skip1 + cnt, buf1[0], buf1[1], buf1[2], buf1[3], buf1[4],
-	       buf1[5], buf1[6], buf1[7]);
+	printf("%s0x%010llx  %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx ",
+	       ansi_reset, skip1 + cnt, buf1[0], buf1[1], buf1[2], buf1[3],
+	       buf1[4], buf1[5], buf1[6], buf1[7]);
 	printicize(buf1);
 	printf("%c%c%c%c%c%c%c%c    ", buf1[0], buf1[1], buf1[2], buf1[3],
 	       buf1[4], buf1[5], buf1[6], buf1[7]);
@@ -61,10 +67,6 @@ void print_same(char * buf1, char * buf2, unsigned long long int skip1,
 void print_diff(char * buf1, char * buf2, unsigned long long int skip1,
                 unsigned long long int skip2, unsigned long long int cnt)
 {
-	// ANSI escape sequences
-	char * ansi_green = "\x1B""[32m";
-	char * ansi_red = "\x1B""[31m";
-	char * ansi_reset = "\x1B""[0m";
 	char * color[8];
 	
 	// Assign escape sequences as appropriate for each byte
@@ -194,8 +196,9 @@ int main(int argc, char **argv)
 	}
 
 	// Print the header
-	printf("   offset      0 1 2 3 4 5 6 7 01234567    "
-	       "   offset      0 1 2 3 4 5 6 7 01234567\n");
+	printf("%s   offset      0 1 2 3 4 5 6 7 01234567    "
+	       "   offset      0 1 2 3 4 5 6 7 01234567\n",
+	       ansi_reset);
 	
 	final = 0;
 	cnt = 0;
