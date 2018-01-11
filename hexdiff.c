@@ -29,6 +29,7 @@
 char * ansi_green = "\x1B""[32m";
 char * ansi_red = "\x1B""[31m";
 char * ansi_reset = "\x1B""[0m";
+char * empty_str = "";
 
 
 void printicize(char * buf) {
@@ -68,13 +69,31 @@ void print_diff(char * buf1, char * buf2, unsigned long long int skip1,
                 unsigned long long int skip2, unsigned long long int cnt)
 {
 	char * color[8];
-	
+	char * color_last;
+
 	// Assign escape sequences as appropriate for each byte
-	// TODO: This whole thing would probably run faster if we didn't
-	// have repeating escape codes for multiple characters of the
-	// same color
 	for (int i = 0; i < 8; i++) {
 		color[i] = buf1[i] == buf2[i] ? ansi_green : ansi_red;
+	}
+
+	// Remove many redundant escape sequences
+	color_last = color[0];
+
+	if ((color[0] == ansi_red) && (color[7] == ansi_red)) {
+		// Beginning of each section is preceded by the address
+		// (always red), or by the last element of a preceding section.
+		// As long as the beginning and ending elements are both red,
+		// we can get rid of the escape sequence at the beginning of the
+		// section.
+		color[0] = empty_str;
+	}
+
+	for (int i = 1; i < 8; i++) {
+		if (color[i] == color_last) {
+			color[i] = empty_str;
+		} else {
+			color_last = color[i];
+		}
 	}
 
 	// Print the left side
