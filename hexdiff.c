@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
 
 // ANSI escape sequences
@@ -32,7 +33,16 @@ char * ansi_reset = "\x1B""[0m";
 char * empty_str = "";
 
 
-void printicize(char * buf) {
+static int sigint_sent = 0;
+
+void sigint_handler(int signum)
+{
+	sigint_sent = 1;
+}
+
+
+void printicize(char * buf)
+{
 	// Convert non-ASCII printable values to '.'
 	for (int i = 0; i < 8; i++) {
 		if ((buf[i] < 0x20) || (buf[i] > 0x7E)) {
@@ -132,12 +142,9 @@ int main(int argc, char **argv)
 	unsigned long long int max_len, skip1, skip2, cnt, eq_run;
 	char *fname1, *fname2;
 	FILE *file1, *file2;
-
+	struct sigaction sigint_action;
 	unsigned char buf1[8], buf2[8];
 
-	// TODO: Trap SIGINT so that we always clean up with a 
-	// reset character, and don't leave the terminal in red
-	// or green mode
 
 	// Parse the input arguments
 	show_all = 0;
@@ -214,6 +221,10 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+	// Set up signal handler for SIGINT to cleanly stop diffing
+	sigint_action.sa_handler = sigint_handler;
+	sigaction(SIGINT, &sigint_action, NULL);
+
 	// Print the header
 	printf("%s   offset      0 1 2 3 4 5 6 7 01234567    "
 	       "   offset      0 1 2 3 4 5 6 7 01234567\n",
@@ -222,7 +233,8 @@ int main(int argc, char **argv)
 	final = 0;
 	cnt = 0;
 	eq_run = 0;
-	while ((final == 0) && ((cnt < max_len) || (max_len == 0))) {
+	while ((final == 0) && ((cnt < max_len) || (max_len == 0)) &&
+	       (sigint_sent == 0)) {
 		// If we fail to fill the buffer due to EOF, we want
 		// the residual values to be 0
 		memset(buf1, 0, 8);
