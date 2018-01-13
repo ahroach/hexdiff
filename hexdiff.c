@@ -78,7 +78,7 @@ void print_same(char * buf1, char * buf2, unsigned long long int skip1,
 	       skip2 + cnt, buf2[0], buf2[1], buf2[2], buf2[3], buf2[4],
 	       buf2[5], buf2[6], buf2[7]);
 	printicize(buf2);
-	printf("%c%c%c%c%c%c%c%c\n", buf2[0], buf1[1], buf2[2], buf2[3],
+	printf("%c%c%c%c%c%c%c%c\n", buf2[0], buf2[1], buf2[2], buf2[3],
 	       buf2[4], buf2[5], buf2[6], buf2[7]);
 	return;
 }
