@@ -33,13 +33,20 @@ char * ansi_reset = "\x1B""[0m";
 char * empty_str = "";
 
 
-static int sigint_sent = 0;
+static int sigint_recv = 0;
 
 void sigint_handler(int signum)
 {
-	sigint_sent = 1;
+	sigint_recv = 1;
 }
 
+void arg_error(char **argv)
+{
+	fprintf(stderr,
+	        "Usage: %s [-a] [-n max_len] file1 file2 [skip1 [skip2]]\n",
+	        argv[0]);
+	exit(EXIT_FAILURE);
+}
 
 void printicize(char * buf)
 {
@@ -57,7 +64,8 @@ void print_same(char * buf1, char * buf2, unsigned long long int skip1,
                 unsigned long long int skip2, unsigned long long int cnt)
 {
 	// Print the left side
-	printf("%s0x%010llx  %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx ",
+	printf("%s0x%010llx  "
+	       "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx ",
 	       ansi_reset, skip1 + cnt, buf1[0], buf1[1], buf1[2], buf1[3],
 	       buf1[4], buf1[5], buf1[6], buf1[7]);
 	printicize(buf1);
@@ -65,7 +73,8 @@ void print_same(char * buf1, char * buf2, unsigned long long int skip1,
 	       buf1[4], buf1[5], buf1[6], buf1[7]);
 
 	// Print the right side
-	printf("0x%010llx  %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx ",
+	printf("0x%010llx  "
+	       "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx ",
 	       skip2 + cnt, buf2[0], buf2[1], buf2[2], buf2[3], buf2[4],
 	       buf2[5], buf2[6], buf2[7]);
 	printicize(buf2);
@@ -91,10 +100,10 @@ void print_diff(char * buf1, char * buf2, unsigned long long int skip1,
 
 	if ((color[0] == ansi_red) && (color[7] == ansi_red)) {
 		// Beginning of each section is preceded by the address
-		// (always red), or by the last element of a preceding section.
-		// As long as the beginning and ending elements are both red,
-		// we can get rid of the escape sequence at the beginning of the
-		// section.
+		// (always red), or by the last element of a preceding
+		// section. As long as the beginning and ending elements are
+		// both red, we can get rid of the escape sequence at the
+		// beginning of the section.
 		color[0] = empty_str;
 	}
 
@@ -138,7 +147,7 @@ void print_diff(char * buf1, char * buf2, unsigned long long int skip1,
 
 int main(int argc, char **argv)
 {
-	int opt, show_all, final;
+	int opt, show_all, input_end;
 	unsigned long long int max_len, skip1, skip2, cnt, eq_run;
 	char *fname1, *fname2;
 	FILE *file1, *file2;
@@ -158,40 +167,39 @@ int main(int argc, char **argv)
 			max_len = strtoull(optarg, 0, 0);
 			break;
 		default:
-			fprintf(stderr,
-			        "Usage: %s [-a] [-n max_len] file1 file2"
-				" [skip1 [skip2]]\n",
-				argv[0]);
-			exit(EXIT_FAILURE);
+			arg_error(argv);
 		}
 	}
 
 	// Get the filenames and any skip values
-	switch (argc - optind) {
-	case 2:
-		fname1 = argv[argc-2];
-		fname2 = argv[argc-1];
+	if ((argc - optind) < 2) {
+		arg_error(argv);
+	}
+
+	fname1 = argv[optind];
+	optind++;
+
+	fname2 = argv[optind];
+	optind++;
+	
+	if (optind < argc) {
+		skip1 = strtoull(argv[optind], 0, 0);
+		optind++;
+	} else {
 		skip1 = 0;
+	}
+
+	if (optind < argc) {
+		skip2 = strtoull(argv[optind], 0, 0);
+		optind++;
+	} else {
 		skip2 = 0;
-		break;
-	case 3:
-		fname1 = argv[argc-3];
-		fname2 = argv[argc-2];
-		skip1 = strtoull(argv[argc-1], 0, 0);
-		skip2 = 0;
-		break;
-	case 4:
-		fname1 = argv[argc-4];
-		fname2 = argv[argc-3];
-		skip1 = strtoull(argv[argc-2], 0, 0);
-		skip2 = strtoull(argv[argc-1], 0, 0);
-		break;
-	default:
-		fprintf(stderr,
-		        "Usage: %s [-a] [-n max_len] file1 file2"
-			" [skip1 [skip2]]\n",
-			argv[0]);
-		exit(EXIT_FAILURE);
+	}
+
+	if (optind < argc) {
+		// We've parsed all possible arguments, but there
+		// are still arguments remaining
+		arg_error(argv);
 	}
 
 	// Open the files and seek to the appropriate spots
@@ -221,20 +229,20 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	// Set up signal handler for SIGINT to cleanly stop diffing
+	// Set up signal handler for SIGINT
 	sigint_action.sa_handler = sigint_handler;
 	sigaction(SIGINT, &sigint_action, NULL);
 
-	// Print the header
+	// Begin printing output
 	printf("%s   offset      0 1 2 3 4 5 6 7 01234567    "
 	       "   offset      0 1 2 3 4 5 6 7 01234567\n",
 	       ansi_reset);
 	
-	final = 0;
+	input_end = 0;
 	cnt = 0;
 	eq_run = 0;
-	while ((final == 0) && ((cnt < max_len) || (max_len == 0)) &&
-	       (sigint_sent == 0)) {
+	while ((input_end == 0) && ((cnt < max_len) || (max_len == 0)) &&
+	       (sigint_recv == 0)) {
 		// If we fail to fill the buffer due to EOF, we want
 		// the residual values to be 0
 		memset(buf1, 0, 8);
@@ -243,10 +251,10 @@ int main(int argc, char **argv)
 		// TODO: Probably less I/O overhead if we read more than
 		// 8 bytes at a time. Or, threads...
 		if (fread(buf1, 1, 8, file1) != 8) {
-			final = 1;
+			input_end = 1;
 		}
 		if (fread(buf2, 1, 8, file2) != 8) {
-			final = 1;
+			input_end = 1;
 		}
 		
 		if (memcmp(buf1, buf2, 8) == 0) {
