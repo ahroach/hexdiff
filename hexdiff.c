@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 			show_all = 1;
 			break;
 		case 'n':
-			max_len = strtoull(optarg, 0, 0);
+			max_len = strtoull(optarg, NULL, 0);
 			break;
 		default:
 			arg_error(argv);
@@ -181,16 +181,16 @@ int main(int argc, char **argv)
 
 	fname2 = argv[optind];
 	optind++;
-	
+
 	if (optind < argc) {
-		skip1 = strtoull(argv[optind], 0, 0);
+		skip1 = strtoull(argv[optind], NULL, 0);
 		optind++;
 	} else {
 		skip1 = 0;
 	}
 
 	if (optind < argc) {
-		skip2 = strtoull(argv[optind], 0, 0);
+		skip2 = strtoull(argv[optind], NULL, 0);
 		optind++;
 	} else {
 		skip2 = 0;
