@@ -27,10 +27,10 @@
 
 
 // ANSI escape sequences
-char * ansi_green = "\x1B""[32m";
-char * ansi_red = "\x1B""[31m";
-char * ansi_reset = "\x1B""[0m";
-char * empty_str = "";
+const char * ansi_green = "\x1B""[32m";
+const char * ansi_red = "\x1B""[31m";
+const char * ansi_reset = "\x1B""[0m";
+const char * empty_str = "";
 
 
 static int sigint_recv = 0;
@@ -87,8 +87,8 @@ void print_same(char * buf1, char * buf2, unsigned long long int skip1,
 void print_diff(char * buf1, char * buf2, unsigned long long int skip1,
                 unsigned long long int skip2, unsigned long long int cnt)
 {
-	char * color[8];
-	char * color_last;
+	const char * color[8];
+	const char * color_last;
 
 	// Assign escape sequences as appropriate for each byte
 	for (int i = 0; i < 8; i++) {
