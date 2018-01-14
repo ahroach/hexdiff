@@ -15,7 +15,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 
@@ -40,6 +39,7 @@ void sigint_handler(int signum)
 	sigint_recv = 1;
 }
 
+
 void arg_error(char **argv)
 {
 	fprintf(stderr,
@@ -48,11 +48,12 @@ void arg_error(char **argv)
 	exit(EXIT_FAILURE);
 }
 
+
 void printicize(char * buf)
 {
 	// Convert non-ASCII printable values to '.'
 	for (int i = 0; i < 8; i++) {
-		if ((buf[i] < 0x20) || (buf[i] > 0x7E)) {
+		if ((buf[i] < 0x20) || (buf[i] > 0x7e)) {
 			buf[i] = '.';
 		}
 	}
