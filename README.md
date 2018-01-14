@@ -15,14 +15,14 @@ Installation
 ------------
 Hexdiff relies only on standard C libraries, with the color-coding performed by
 ANSI escape sequences. It can be compiled with:
-	gcc -o hexdiff hexdiff.c
+  gcc -o hexdiff hexdiff.c
 Optimizations can be enabled during compilation, though they seem to lead to
 minimal performance improvements.
 
 Usage
 -----
 The user runs:
-	hexdiff [-a] [-n max_len] file1 file2 [skip1 [skip2]]
+  hexdiff [-a] [-n max_len] file1 file2 [skip1 [skip2]]
 with the command line arguments:
 * `-a`: all lines should be printed
 * `-n`: specify a maximum output length
