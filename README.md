@@ -6,8 +6,8 @@ format is color-coded hexadecimal, inspired by `radiff2 -x`.
 
 Features
 --------
-* Arbitrary offsets can be set for each input file
-* A maximum compare length can be specified to limit the amount of compared data
+* Arbitrary offsets can be set for each input file.
+* A maximum compare length can be specified to limit the amount of compared data.
 * All matching lines can be printed to the terminal window, even when they form
   a large contiguous block of matching data.
 
@@ -29,7 +29,7 @@ The user runs:
 
 with the command line arguments:
 * `-a`: all lines should be printed
-* `-n`: specify a maximum output length
+* `-n`: specify a maximum number of bytes to compare
 * `skip1`: offset for `file1`
 * `skip2`: offset for `file2`
 
