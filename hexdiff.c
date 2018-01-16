@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <signal.h>
 
 
@@ -205,23 +206,25 @@ int main(int argc, char **argv)
 
 	// Open the files and seek to the appropriate spots
 	if ((file1 = fopen(fname1, "r")) == NULL) {
-		perror("fopen");
+		fprintf(stderr, "fopen: %s: %s\n", fname1, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	if ((file2 = fopen(fname2, "r")) == NULL) {
-		perror("fopen");
+		fprintf(stderr, "fopen: %s: %s\n", fname2, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	if (fseeko(file1, skip1, 0) != 0) {
 		fprintf(stderr,
-		        "Error seeking to 0x%x in %s.\n", skip1, fname1);
+		        "fseek to 0x%x in %s: %s\n", skip1, fname1,
+		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	if (fseeko(file2, skip2, 0) != 0) {
 		fprintf(stderr,
-		        "Error seeking to 0x%x in %s.\n", skip2, fname2);
+		        "fseek to 0x%x in %s: %s\n", skip2, fname2,
+		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
