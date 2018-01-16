@@ -210,23 +210,18 @@ int main(int argc, char **argv)
 	}
 	if ((file2 = fopen(fname2, "r")) == 0) {
 		fprintf(stderr, "Error opening %s for reading.\n", fname2);
-		fclose(file1);
 		exit(EXIT_FAILURE);
 	}
 
 	if (fseeko(file1, skip1, 0) != 0) {
 		fprintf(stderr,
 		        "Error seeking to 0x%x in %s.\n", skip1, fname1);
-		fclose(file1);
-		fclose(file2);
 		exit(EXIT_FAILURE);
 	}
 
 	if (fseeko(file2, skip2, 0) != 0) {
 		fprintf(stderr,
 		        "Error seeking to 0x%x in %s.\n", skip2, fname2);
-		fclose(file1);
-		fclose(file2);
 		exit(EXIT_FAILURE);
 	}
 
