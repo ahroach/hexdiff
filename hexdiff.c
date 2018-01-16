@@ -204,12 +204,12 @@ int main(int argc, char **argv)
 	}
 
 	// Open the files and seek to the appropriate spots
-	if ((file1 = fopen(fname1, "r")) == 0) {
-		fprintf(stderr, "Error opening %s for reading.\n", fname1);
+	if ((file1 = fopen(fname1, "r")) == NULL) {
+		perror("fopen");
 		exit(EXIT_FAILURE);
 	}
-	if ((file2 = fopen(fname2, "r")) == 0) {
-		fprintf(stderr, "Error opening %s for reading.\n", fname2);
+	if ((file2 = fopen(fname2, "r")) == NULL) {
+		perror("fopen");
 		exit(EXIT_FAILURE);
 	}
 
