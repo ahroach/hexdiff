@@ -178,25 +178,11 @@ int main(int argc, char **argv)
 		arg_error(argv);
 	}
 
-	fname1 = argv[optind];
-	optind++;
+	fname1 = argv[optind++];
+	fname2 = argv[optind++];
 
-	fname2 = argv[optind];
-	optind++;
-
-	if (optind < argc) {
-		skip1 = strtoull(argv[optind], NULL, 0);
-		optind++;
-	} else {
-		skip1 = 0;
-	}
-
-	if (optind < argc) {
-		skip2 = strtoull(argv[optind], NULL, 0);
-		optind++;
-	} else {
-		skip2 = 0;
-	}
+	skip1 = (optind < argc) ? strtoull(argv[optind++], NULL, 0) : 0;
+	skip2 = (optind < argc) ? strtoull(argv[optind++], NULL, 0) : 0;
 
 	if (optind < argc) {
 		// We've parsed all possible arguments, but there
