@@ -28,21 +28,21 @@
 
 
 // ANSI escape sequences
-const char ansi_green[] = "\x1B""[32m";
-const char ansi_red[] = "\x1B""[31m";
-const char ansi_reset[] = "\x1B""[0m";
-const char empty_str[] = "";
+static const char ansi_green[] = "\x1B""[32m";
+static const char ansi_red[] = "\x1B""[31m";
+static const char ansi_reset[] = "\x1B""[0m";
+static const char empty_str[] = "";
 
 
 static int sigint_recv = 0;
 
-void sigint_handler(int signum)
+static void sigint_handler(int signum)
 {
 	sigint_recv = 1;
 }
 
 
-void arg_error(char **argv)
+static void arg_error(char **argv)
 {
 	fprintf(stderr,
 	        "Usage: %s [-a] [-n max_len] file1 file2 [skip1 [skip2]]\n",
@@ -51,7 +51,7 @@ void arg_error(char **argv)
 }
 
 
-void printicize(uint8_t * buf)
+static void printicize(uint8_t * buf)
 {
 	// Convert non-ASCII printable values to '.'
 	for (int i = 0; i < 8; i++) {
@@ -63,8 +63,10 @@ void printicize(uint8_t * buf)
 }
 
 
-void print_same(uint8_t *buf1, uint8_t *buf2, unsigned long long int skip1,
-                unsigned long long int skip2, unsigned long long int cnt)
+static void print_same(uint8_t *buf1, uint8_t *buf2,
+                       unsigned long long int skip1,
+                       unsigned long long int skip2,
+		       unsigned long long int cnt)
 {
 	// Print the left side
 	printf("%s0x%010llx  "
@@ -87,8 +89,10 @@ void print_same(uint8_t *buf1, uint8_t *buf2, unsigned long long int skip1,
 }
 
 
-void print_diff(uint8_t *buf1, uint8_t *buf2, unsigned long long int skip1,
-                unsigned long long int skip2, unsigned long long int cnt)
+static void print_diff(uint8_t *buf1, uint8_t *buf2,
+                       unsigned long long int skip1,
+                       unsigned long long int skip2,
+		       unsigned long long int cnt)
 {
 	const char *color[8];
 	const char *color_last;
