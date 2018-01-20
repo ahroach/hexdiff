@@ -21,16 +21,17 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
 
 
 // ANSI escape sequences
-const char * ansi_green = "\x1B""[32m";
-const char * ansi_red = "\x1B""[31m";
-const char * ansi_reset = "\x1B""[0m";
-const char * empty_str = "";
+const char ansi_green[] = "\x1B""[32m";
+const char ansi_red[] = "\x1B""[31m";
+const char ansi_reset[] = "\x1B""[0m";
+const char empty_str[] = "";
 
 
 static int sigint_recv = 0;
@@ -50,7 +51,7 @@ void arg_error(char **argv)
 }
 
 
-void printicize(char * buf)
+void printicize(uint8_t * buf)
 {
 	// Convert non-ASCII printable values to '.'
 	for (int i = 0; i < 8; i++) {
@@ -62,7 +63,7 @@ void printicize(char * buf)
 }
 
 
-void print_same(char * buf1, char * buf2, unsigned long long int skip1,
+void print_same(uint8_t *buf1, uint8_t *buf2, unsigned long long int skip1,
                 unsigned long long int skip2, unsigned long long int cnt)
 {
 	// Print the left side
@@ -86,11 +87,11 @@ void print_same(char * buf1, char * buf2, unsigned long long int skip1,
 }
 
 
-void print_diff(char * buf1, char * buf2, unsigned long long int skip1,
+void print_diff(uint8_t *buf1, uint8_t *buf2, unsigned long long int skip1,
                 unsigned long long int skip2, unsigned long long int cnt)
 {
-	const char * color[8];
-	const char * color_last;
+	const char *color[8];
+	const char *color_last;
 
 	// Assign escape sequences as appropriate for each byte
 	for (int i = 0; i < 8; i++) {
@@ -154,7 +155,7 @@ int main(int argc, char **argv)
 	char *fname1, *fname2;
 	FILE *file1, *file2;
 	struct sigaction sigint_action;
-	unsigned char buf1[8], buf2[8];
+	uint8_t buf1[8], buf2[8];
 
 
 	// Parse the input arguments
