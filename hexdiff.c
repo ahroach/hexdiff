@@ -59,7 +59,6 @@ static void printicize(uint8_t * buf)
 			buf[i] = '.';
 		}
 	}
-	return;
 }
 
 
@@ -85,7 +84,6 @@ static void print_same(uint8_t *buf1, uint8_t *buf2,
 	printicize(buf2);
 	printf("%c%c%c%c%c%c%c%c\n", buf2[0], buf2[1], buf2[2], buf2[3],
 	       buf2[4], buf2[5], buf2[6], buf2[7]);
-	return;
 }
 
 
@@ -148,7 +146,6 @@ static void print_diff(uint8_t *buf1, uint8_t *buf2,
 	       color[4], buf2[4], color[5], buf2[5], color[6], buf2[6],
 	       color[7], buf2[7]);
 	printf("%s", ansi_reset);
-	return;
 }
 
 
