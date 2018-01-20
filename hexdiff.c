@@ -175,21 +175,12 @@ int main(int argc, char **argv)
 	}
 
 	// Get the filenames and any skip values
-	if ((argc - optind) < 2) {
-		arg_error(argv);
-	}
-
+	if ((argc - optind) < 2) arg_error(argv);
 	fname1 = argv[optind++];
 	fname2 = argv[optind++];
-
 	skip1 = (optind < argc) ? strtoull(argv[optind++], NULL, 0) : 0;
 	skip2 = (optind < argc) ? strtoull(argv[optind++], NULL, 0) : 0;
-
-	if (optind < argc) {
-		// We've parsed all possible arguments, but there
-		// are still arguments remaining
-		arg_error(argv);
-	}
+	if (optind < argc) arg_error(argv); //Leftover arguments
 
 	// Open the files and seek to the appropriate spots
 	if ((file1 = fopen(fname1, "r")) == NULL) {
@@ -207,7 +198,6 @@ int main(int argc, char **argv)
 		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-
 	if (fseeko(file2, skip2, 0) != 0) {
 		fprintf(stderr,
 		        "fseek to 0x%x in %s: %s\n", skip2, fname2,
