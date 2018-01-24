@@ -42,11 +42,18 @@ static void sigint_handler(int signum)
 }
 
 
-static void arg_error(char **argv)
+static void show_help(char **argv, int verbose)
 {
 	fprintf(stderr,
-	        "Usage: %s [-a] [-n max_len] file1 file2 [skip1 [skip2]]\n",
+	        "Usage: %s [-ah] [-n len] file1 file2 [skip1 [skip2]]\n",
 	        argv[0]);
+	if (verbose) {
+		printf(" -a      print all lines\n"
+		       " -h      show help\n"
+		       " -n len  maximum number of bytes to compare\n"
+		       " skip1   starting offset for file1\n"
+		       " skip2   starting offset for file2\n");
+	}
 	exit(EXIT_FAILURE);
 }
 
@@ -162,26 +169,28 @@ int main(int argc, char **argv)
 	// Parse the input arguments
 	show_all = 0;
 	max_len = 0;
-	while ((opt = getopt(argc, argv, "an:")) != -1) {
+	while ((opt = getopt(argc, argv, "ahn:")) != -1) {
 		switch (opt) {
 		case 'a':
 			show_all = 1;
 			break;
+		case 'h':
+			show_help(argv, 1);
 		case 'n':
 			max_len = strtoull(optarg, NULL, 0);
 			break;
 		default:
-			arg_error(argv);
+			show_help(argv, 0);
 		}
 	}
 
 	// Get the filenames and any skip values
-	if ((argc - optind) < 2) arg_error(argv);
+	if ((argc - optind) < 2) show_help(argv, 0);
 	fname1 = argv[optind++];
 	fname2 = argv[optind++];
 	skip1 = (optind < argc) ? strtoull(argv[optind++], NULL, 0) : 0;
 	skip2 = (optind < argc) ? strtoull(argv[optind++], NULL, 0) : 0;
-	if (optind < argc) arg_error(argv); //Leftover arguments
+	if (optind < argc) show_help(argv, 0); //Leftover arguments
 
 	// Open the files and seek to the appropriate spots
 	if ((file1 = fopen(fname1, "r")) == NULL) {

@@ -25,10 +25,11 @@ Usage
 -----
 The user runs:
 
-	hexdiff [-a] [-n max_len] file1 file2 [skip1 [skip2]]
+	hexdiff [-a] [-n len] file1 file2 [skip1 [skip2]]
 
 with the command line arguments:
 * `-a`: all lines should be printed
+* `-h`: show help
 * `-n`: specify a maximum number of bytes to compare
 * `skip1`: offset for `file1`
 * `skip2`: offset for `file2`
