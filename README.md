@@ -40,3 +40,5 @@ with the command line arguments:
 * `-c`: number of columns
 * `skip1`: offset for `file1`
 * `skip2`: offset for `file2`
+
+Passing to `less -r` is recommened for scrollable output.
