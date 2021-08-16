@@ -2,6 +2,7 @@
  * hexdiff - hexadecimal differencing program
  *
  * Copyright 2018 Austin Roach <ahroach@gmail.com>
+ * Copyright 2021 Radomír Polách <rp@t4d.cz>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +27,7 @@
 #include <errno.h>
 #include <signal.h>
 
+#define BUFFER_SIZE 256
 
 // ANSI escape sequences
 static const char ansi_green[] = "\x1B""[32m";
@@ -45,12 +47,15 @@ static void sigint_handler(int signum)
 static void show_help(char **argv, int verbose)
 {
 	fprintf(stderr,
-	        "Usage: %s [-ah] [-n len] file1 file2 [skip1 [skip2]]\n",
+	        "Usage: %s [-ahds] [-n len] [-c num] file1 file2 [skip1 [skip2]]\n",
 	        argv[0]);
 	if (verbose) {
 		printf(" -a      print all lines\n"
 		       " -h      show help\n"
+		       " -d      dense output\n"
+		       " -s      skip same lines\n"
 		       " -n len  maximum number of bytes to compare\n"
+		       " -c num  number of columns\n"
 		       " skip1   starting offset for file1\n"
 		       " skip2   starting offset for file2\n");
 	}
@@ -58,10 +63,10 @@ static void show_help(char **argv, int verbose)
 }
 
 
-static void printicize(uint8_t * buf)
+static void printicize(uint8_t * buf, unsigned long long n)
 {
 	// Convert non-ASCII printable values to '.'
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < n; i++) {
 		if ((buf[i] < 0x20) || (buf[i] > 0x7e)) {
 			buf[i] = '.';
 		}
@@ -69,41 +74,38 @@ static void printicize(uint8_t * buf)
 }
 
 
-static void print_same(uint8_t *buf1, uint8_t *buf2,
-                       unsigned long long int skip1,
-                       unsigned long long int skip2,
-		       unsigned long long int cnt)
+static void print_same(uint8_t *buf1, uint8_t *buf2, unsigned long long n, unsigned long long skip1, unsigned long long skip2, unsigned long long cnt, int dense)
 {
 	// Print the left side
-	printf("%s0x%010llx  "
-	       "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx ",
-	       ansi_reset, skip1 + cnt, buf1[0], buf1[1], buf1[2], buf1[3],
-	       buf1[4], buf1[5], buf1[6], buf1[7]);
-	printicize(buf1);
-	printf("%c%c%c%c%c%c%c%c    ", buf1[0], buf1[1], buf1[2], buf1[3],
-	       buf1[4], buf1[5], buf1[6], buf1[7]);
+	printf("%s0x%010llx  ", ansi_reset, skip1 + cnt);
+    for (int i=0;i<n;++i) {
+        printf("%02hhx", buf1[i]);
+        if (!dense) printf(" ");
+    }
+    printf(" ");
+	printicize(buf1, n);
+    for (int i=0;i<n;++i) printf("%c", buf1[i]);
+	printf("    ");
 
 	// Print the right side
-	printf("0x%010llx  "
-	       "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx ",
-	       skip2 + cnt, buf2[0], buf2[1], buf2[2], buf2[3], buf2[4],
-	       buf2[5], buf2[6], buf2[7]);
-	printicize(buf2);
-	printf("%c%c%c%c%c%c%c%c\n", buf2[0], buf2[1], buf2[2], buf2[3],
-	       buf2[4], buf2[5], buf2[6], buf2[7]);
+	printf("0x%010llx  ", skip2 + cnt);
+    for (int i=0;i<n;++i) {
+        printf("%02hhx", buf2[i]);
+        if (!dense) printf(" ");
+    }
+    printf(" ");
+	printicize(buf2, n);
+    for (int i=0;i<n;++i) printf("%c", buf2[i]);
 }
 
 
-static void print_diff(uint8_t *buf1, uint8_t *buf2,
-                       unsigned long long int skip1,
-                       unsigned long long int skip2,
-		       unsigned long long int cnt)
+static void print_diff(uint8_t *buf1, uint8_t *buf2, unsigned long long n, unsigned long long skip1, unsigned long long skip2, unsigned long long cnt, int dense)
 {
-	const char *color[8];
+	const char *color[BUFFER_SIZE];
 	const char *color_last;
 
 	// Assign escape sequences as appropriate for each byte
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < n; i++) {
 		color[i] = buf1[i] == buf2[i] ? ansi_green : ansi_red;
 	}
 
@@ -119,7 +121,7 @@ static void print_diff(uint8_t *buf1, uint8_t *buf2,
 		color[0] = empty_str;
 	}
 
-	for (int i = 1; i < 8; i++) {
+	for (int i = 1; i < n; i++) {
 		if (color[i] == color_last) {
 			color[i] = empty_str;
 		} else {
@@ -128,54 +130,56 @@ static void print_diff(uint8_t *buf1, uint8_t *buf2,
 	}
 
 	// Print the left side
-	printf("%s0x%010llx  "
-	       "%s%02hhx%s%02hhx%s%02hhx%s%02hhx"
-	       "%s%02hhx%s%02hhx%s%02hhx%s%02hhx ",
-	       ansi_red, skip1 + cnt, color[0], buf1[0], color[1], buf1[1],
-	       color[2], buf1[2], color[3], buf1[3], color[4], buf1[4],
-	       color[5], buf1[5], color[6], buf1[6], color[7], buf1[7]);
-	printicize(buf1);
-	printf("%s%c%s%c%s%c%s%c%s%c%s%c%s%c%s%c    ", color[0], buf1[0],
-	       color[1], buf1[1], color[2], buf1[2], color[3], buf1[3],
-	       color[4], buf1[4], color[5], buf1[5], color[6], buf1[6],
-	       color[7], buf1[7]);
+	printf("%s0x%010llx  ", ansi_red, skip1 + cnt);
+    for (int i=0;i<n;++i) {
+        printf("%s%02hhx", color[i], buf1[i]);
+        if (!dense) printf(" ");
+    }
+    printf(" ");
+	printicize(buf1, n);
+    for (int i=0;i<n;++i) printf("%s%c", color[i], buf1[i]);
+	printf("    ");
 
 	// Print the right side
-	printf("%s0x%010llx  "
-	       "%s%02hhx%s%02hhx%s%02hhx%s%02hhx"
-	       "%s%02hhx%s%02hhx%s%02hhx%s%02hhx ",
-	       ansi_red, skip2 + cnt, color[0], buf2[0], color[1], buf2[1],
-	       color[2], buf2[2], color[3], buf2[3], color[4], buf2[4],
-	       color[5], buf2[5], color[6], buf2[6], color[7], buf2[7]);
-	printicize(buf2);
-	printf("%s%c%s%c%s%c%s%c%s%c%s%c%s%c%s%c\n", color[0], buf2[0],
-	       color[1], buf2[1], color[2], buf2[2], color[3], buf2[3],
-	       color[4], buf2[4], color[5], buf2[5], color[6], buf2[6],
-	       color[7], buf2[7]);
+	printf("%s0x%010llx  ", ansi_red, skip2 + cnt);
+    for (int i=0;i<n;++i) {
+        printf("%s%02hhx", color[i], buf2[i]);
+        if (!dense) printf(" ");
+    }
+    printf(" ");
+	printicize(buf2, n);
+    for (int i=0;i<n;++i) printf("%s%c", color[i], buf2[i]);
 	printf("%s", ansi_reset);
 }
 
 
 int main(int argc, char **argv)
 {
-	int opt, show_all, input_end;
-	unsigned long long int max_len, skip1, skip2, cnt, eq_run;
+	int opt, show_all = 0, input_end, bytes_on_line = 16, dense = 0, skip_same = 0;
+	unsigned long long max_len = 0, skip1, skip2, cnt, eq_run;
 	char *fname1, *fname2;
 	FILE *file1, *file2;
 	struct sigaction sigint_action;
-	uint8_t buf1[8], buf2[8];
-
+	uint8_t buf1[BUFFER_SIZE], buf2[BUFFER_SIZE];
 
 	// Parse the input arguments
-	show_all = 0;
-	max_len = 0;
-	while ((opt = getopt(argc, argv, "ahn:")) != -1) {
+	while ((opt = getopt(argc, argv, "ahdsc:n:")) != -1) {
 		switch (opt) {
 		case 'a':
 			show_all = 1;
 			break;
 		case 'h':
 			show_help(argv, 1);
+            break;
+		case 'd':
+            dense = 1;
+            break;
+		case 's':
+            skip_same = 1;
+            break;
+		case 'c':
+			bytes_on_line = strtoull(optarg, NULL, 0);
+            break;
 		case 'n':
 			max_len = strtoull(optarg, NULL, 0);
 			break;
@@ -204,13 +208,13 @@ int main(int argc, char **argv)
 
 	if (fseeko(file1, skip1, 0) != 0) {
 		fprintf(stderr,
-		        "fseek to 0x%x in %s: %s\n", skip1, fname1,
+		        "fseek to 0x%llx in %s: %s\n", skip1, fname1,
 		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	if (fseeko(file2, skip2, 0) != 0) {
 		fprintf(stderr,
-		        "fseek to 0x%x in %s: %s\n", skip2, fname2,
+		        "fseek to 0x%llx in %s: %s\n", skip2, fname2,
 		        strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -218,11 +222,6 @@ int main(int argc, char **argv)
 	// Set up signal handler for SIGINT
 	sigint_action.sa_handler = sigint_handler;
 	sigaction(SIGINT, &sigint_action, NULL);
-
-	// Begin printing output
-	printf("%s   offset      0 1 2 3 4 5 6 7 01234567    "
-	       "   offset      0 1 2 3 4 5 6 7 01234567\n",
-	       ansi_reset);
 	
 	input_end = 0;
 	cnt = 0;
@@ -231,31 +230,33 @@ int main(int argc, char **argv)
 	       (sigint_recv == 0)) {
 		// If we fail to fill the buffer due to EOF, we want
 		// the residual values to be 0
-		memset(buf1, 0, 8);
-		memset(buf2, 0, 8);
+		memset(buf1, 0, bytes_on_line);
+		memset(buf2, 0, bytes_on_line);
 
 		// TODO: Probably less I/O overhead if we read more than
 		// 8 bytes at a time. Or, threads...
-		if (fread(buf1, 1, 8, file1) != 8) {
+		if (fread(buf1, 1, bytes_on_line, file1) != bytes_on_line) {
 			input_end = 1;
 		}
-		if (fread(buf2, 1, 8, file2) != 8) {
+		if (fread(buf2, 1, bytes_on_line, file2) != bytes_on_line) {
 			input_end = 1;
 		}
 		
-		if (memcmp(buf1, buf2, 8) == 0) {
-			if ((eq_run == 0) || (show_all == 1)) {
-				print_same(buf1, buf2, skip1, skip2, cnt);	
-			} else if (eq_run == 1) {
-				printf("...\n");
-			}
+		if (memcmp(buf1, buf2, bytes_on_line) == 0) {
+            if (!skip_same &&(eq_run == 0) || (show_all == 1)) {
+                print_same(buf1, buf2, bytes_on_line, skip1, skip2, cnt, dense);
+                printf("\n");
+            } else if (eq_run == 1) {
+                printf("...\n");
+            }
 			eq_run++;
 		} else {
-			print_diff(buf1, buf2, skip1, skip2, cnt);
+			print_diff(buf1, buf2, bytes_on_line, skip1, skip2, cnt, dense);
+            printf("\n");
 			eq_run = 0;
 		}
 	
-		cnt += 8;
+		cnt += bytes_on_line;
 	}
 
 	fclose(file1);

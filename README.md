@@ -18,6 +18,10 @@ ANSI escape sequences. It can be compiled with:
 
 	gcc -o hexdiff hexdiff.c
 
+or
+
+    make
+
 Optimizations can be enabled during compilation, though they seem to lead to
 minimal performance improvements.
 
@@ -25,12 +29,14 @@ Usage
 -----
 The user runs:
 
-	hexdiff [-a] [-n len] file1 file2 [skip1 [skip2]]
+	hexdiff [-ahds] [-n len] [-c num] file1 file2 [skip1 [skip2]]
 
 with the command line arguments:
 * `-a`: all lines should be printed
 * `-h`: show help
+* `-d`: dense output
+* `-s`: skip same lines
 * `-n`: specify a maximum number of bytes to compare
+* `-c`: number of columns
 * `skip1`: offset for `file1`
 * `skip2`: offset for `file2`
-
