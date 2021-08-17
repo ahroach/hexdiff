@@ -26,6 +26,7 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/ioctl.h>
 
 #define BUFFER_SIZE 256
 
@@ -161,6 +162,12 @@ int main(int argc, char **argv)
     FILE *file1, *file2;
     struct sigaction sigint_action;
     uint8_t buf1[BUFFER_SIZE], buf2[BUFFER_SIZE];
+    struct winsize w;
+
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    if (w.ws_col > 0) {
+        bytes_on_line = ((w.ws_col/2*2) - (12+2+1)*2 - 3)/2;
+    }
 
     // Parse the input arguments
     while ((opt = getopt(argc, argv, "ahdsc:n:")) != -1) {
@@ -188,6 +195,10 @@ int main(int argc, char **argv)
         default:
             show_help(argv, 0);
         }
+    }
+
+    if (w.ws_col > 0) {
+        bytes_on_line /= 3+!dense;
     }
 
     // Get the filenames and any skip values
@@ -266,3 +277,5 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
+// vim: ts=2 fdm=marker syntax=c expandtab sw=2
