@@ -48,7 +48,7 @@ static void sigint_handler(int signum)
 static void show_help(char **argv, int verbose)
 {
     fprintf(stderr,
-            "Usage: %s [-ahds] [-n len] [-c num] file1 file2 [skip1 [skip2]]\n",
+            "Usage: %s [-ahds] [-n len] [-c num] [-w len] file1 file2 [skip1 [skip2]]\n",
             argv[0]);
     if (verbose) {
         printf(" -a      print all lines\n"
@@ -56,7 +56,8 @@ static void show_help(char **argv, int verbose)
                " -d      dense output\n"
                " -s      skip same lines\n"
                " -n len  maximum number of bytes to compare\n"
-               " -c num  number of columns\n"
+               " -c num  number of bytes (columns)\n"
+               " -w len  force terminal width\n"
                " skip1   starting offset for file1\n"
                " skip2   starting offset for file2\n");
     }
@@ -154,9 +155,13 @@ static void print_diff(uint8_t *buf1, uint8_t *buf2, unsigned long long n, unsig
 }
 
 
+int fit_bytes(int width, int dense) {
+    return ((width/2*2) - (12+2+1)*2 - 3)/2/(3+!dense);
+}
+
 int main(int argc, char **argv)
 {
-    int opt, show_all = 0, input_end, bytes_on_line = 16, dense = 0, skip_same = 0;
+    int opt, show_all = 0, input_end, bytes_w = 16, dense = 0, skip_same = 0, print_w = 0, size_w = 0;
     unsigned long long max_len = 0, skip1, skip2, cnt, eq_run;
     char *fname1, *fname2;
     FILE *file1, *file2;
@@ -165,12 +170,10 @@ int main(int argc, char **argv)
     struct winsize w;
 
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    if (w.ws_col > 0) {
-        bytes_on_line = ((w.ws_col/2*2) - (12+2+1)*2 - 3)/2;
-    }
+    size_w = w.ws_col;
 
     // Parse the input arguments
-    while ((opt = getopt(argc, argv, "ahdsc:n:")) != -1) {
+    while ((opt = getopt(argc, argv, "ahdsw:c:n:")) != -1) {
         switch (opt) {
         case 'a':
             show_all = 1;
@@ -185,9 +188,13 @@ int main(int argc, char **argv)
             skip_same = 1;
             break;
         case 'c':
-            bytes_on_line = strtoull(optarg, NULL, 0);
-            if (bytes_on_line < 1) bytes_on_line = 16;
-            if (bytes_on_line > 256) bytes_on_line = 256;
+            size_w = 0;
+            bytes_w = strtoull(optarg, NULL, 0);
+            if (bytes_w < 1) bytes_w = 16;
+            if (bytes_w > 256) bytes_w = 256;
+            break;
+        case 'w':
+            size_w = strtoull(optarg, NULL, 0);
             break;
         case 'n':
             max_len = strtoull(optarg, NULL, 0);
@@ -197,8 +204,9 @@ int main(int argc, char **argv)
         }
     }
 
-    if (w.ws_col > 0) {
-        bytes_on_line /= 3+!dense;
+    if (size_w) {
+        bytes_w = fit_bytes(size_w, dense);
+        if (bytes_w < 1) bytes_w = 1;
     }
 
     // Get the filenames and any skip values
@@ -243,39 +251,39 @@ int main(int argc, char **argv)
            (sigint_recv == 0)) {
         // If we fail to fill the buffer due to EOF, we want
         // the residual values to be 0
-        memset(buf1, 0, bytes_on_line);
-        memset(buf2, 0, bytes_on_line);
+        memset(buf1, 0, bytes_w);
+        memset(buf2, 0, bytes_w);
 
         // TODO: Probably less I/O overhead if we read more than
         // 8 bytes at a time. Or, threads...
-        if (fread(buf1, 1, bytes_on_line, file1) != bytes_on_line) {
+        if (fread(buf1, 1, bytes_w, file1) != bytes_w) {
             input_end = 1;
         }
-        if (fread(buf2, 1, bytes_on_line, file2) != bytes_on_line) {
+        if (fread(buf2, 1, bytes_w, file2) != bytes_w) {
             input_end = 1;
         }
 
-        if (memcmp(buf1, buf2, bytes_on_line) == 0) {
+        if (memcmp(buf1, buf2, bytes_w) == 0) {
             if (!skip_same &&(eq_run == 0) || (show_all == 1)) {
-                print_same(buf1, buf2, bytes_on_line, skip1, skip2, cnt, dense);
+                print_same(buf1, buf2, bytes_w, skip1, skip2, cnt, dense);
                 printf("\n");
             } else if (eq_run == 1) {
                 printf("...\n");
             }
             eq_run++;
         } else {
-            print_diff(buf1, buf2, bytes_on_line, skip1, skip2, cnt, dense);
+            print_diff(buf1, buf2, bytes_w, skip1, skip2, cnt, dense);
             printf("\n");
             eq_run = 0;
         }
 
-        cnt += bytes_on_line;
+        cnt += bytes_w;
     }
 
     fclose(file1);
     fclose(file2);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 // vim: ts=2 fdm=marker syntax=c expandtab sw=2
