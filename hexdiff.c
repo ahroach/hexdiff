@@ -36,14 +36,12 @@ static const char ansi_red[] = "\x1B""[31m";
 static const char ansi_reset[] = "\x1B""[0m";
 static const char empty_str[] = "";
 
-
 static int sigint_recv = 0;
 
 static void sigint_handler(int signum)
 {
     sigint_recv = 1;
 }
-
 
 static void show_help(char **argv, int verbose)
 {
@@ -64,7 +62,6 @@ static void show_help(char **argv, int verbose)
     exit(EXIT_FAILURE);
 }
 
-
 static void printicize(uint8_t * buf, unsigned long long n)
 {
     // Convert non-ASCII printable values to '.'
@@ -74,7 +71,6 @@ static void printicize(uint8_t * buf, unsigned long long n)
         }
     }
 }
-
 
 static void print_same(uint8_t *buf1, uint8_t *buf2, unsigned long long n, unsigned long long skip1, unsigned long long skip2, unsigned long long cnt, int dense)
 {
@@ -99,7 +95,6 @@ static void print_same(uint8_t *buf1, uint8_t *buf2, unsigned long long n, unsig
     printicize(buf2, n);
     for (int i=0;i<n;++i) printf("%c", buf2[i]);
 }
-
 
 static void print_diff(uint8_t *buf1, uint8_t *buf2, unsigned long long n, unsigned long long skip1, unsigned long long skip2, unsigned long long cnt, int dense)
 {
@@ -153,7 +148,6 @@ static void print_diff(uint8_t *buf1, uint8_t *buf2, unsigned long long n, unsig
     for (int i=0;i<n;++i) printf("%s%c", color[i], buf2[i]);
     printf("%s", ansi_reset);
 }
-
 
 int fit_bytes(int width, int dense) {
     return ((width/2*2) - (12+2+1)*2 - 3)/2/(3+!dense);

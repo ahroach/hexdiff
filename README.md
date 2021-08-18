@@ -36,9 +36,17 @@ with the command line arguments:
 * `-h`: show help
 * `-d`: dense output
 * `-s`: skip same lines
-* `-n`: specify a maximum number of bytes to compare
-* `-c`: number of columns
+* `-n`: maximum number of bytes to compare
+* `-c`: num  number of bytes (columns)
+* `-w len  force terminal width`
 * `skip1`: offset for `file1`
 * `skip2`: offset for `file2`
 
-Passing to `less -r` is recommened for scrollable output.
+Tips
+----
+
+* Passing to `less -R` is recommened for scrollable output.
+* Auto width when passing output to `head`, `grep`, `tail`, `less` use alias:
+```
+alias hexdiff="hexdiff -w $COLUMNS"
+```
