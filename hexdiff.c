@@ -264,7 +264,7 @@ int main(int argc, char **argv)
         }
 
         if (memcmp(buf1, buf2, bytes_w) == 0) {
-            if (!skip_same &&(eq_run == 0) || (show_all == 1)) {
+            if ((!skip_same && eq_run == 0) || show_all == 1) {
                 print_same(buf1, buf2, bytes_w, skip1, skip2, cnt, dense);
                 printf("\n");
             } else if (eq_run == 1) {
